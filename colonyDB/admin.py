@@ -1,3 +1,7 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import Animal, Experiment, ExperimentalGroup
+
+admin.site.register(Animal)
+admin.site.register(Experiment)
+admin.site.register(ExperimentalGroup)
