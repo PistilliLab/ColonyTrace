@@ -1,6 +1,9 @@
+import decimal
+from decimal import Decimal
 from django.db import models
+from django.db.models import DecimalField
+from django.db.models import Choices
 from datetime import date
-import json
 
 
 class Experiment(models.Model):
@@ -18,21 +21,44 @@ class ExperimentalGroup(models.Model):
     description = models.TextField()
 
 
+class Tumor(models.Model):
+    tumor_id = models.AutoField(primary_key=True)
+    source_species = models.CharField(max_length=100)
+    source_sex = models.CharField(max_length=1, choices=[('M', 'Male'), ('F', 'Female'), ('U', 'Unknown')])
+    source_age = models.IntegerField()
+    source_date = models.DateField()
+    tumor_type = models.CharField(max_length=200)
+    tumor_subtype = models.CharField(max_length=200)
+    description = models.TextField()
+
+
+class ImplantedTumor(models.Model):
+    implanted_tumor_id = models.AutoField(primary_key=True)
+    tumor = models.ForeignKey(Tumor, on_delete=models.CASCADE)
+    passage = models.IntegerField()
+    implant_date = models.DateField()
+    implant_location = models.CharField(max_length=200)
+    implantation_method = models.CharField(max_length=200)
+    description = models.TextField()
+
+
 class Animal(models.Model):
     primary_key = models.AutoField(primary_key=True)
 
-    # Biologic variables
+    # Biologic Variables
     animal_id = models.IntegerField(unique=True)
     date_of_birth = models.DateField()
     sex = models.CharField(max_length=1, choices=[('M', 'Male'), ('F', 'Female'), ('U', 'Unknown')])
     species = models.CharField(max_length=100)
     strain = models.CharField(max_length=100)
-    female_parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='offspring_of_female')
-    male_parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='offspring_of_male')
+    female_parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True,
+                                      related_name='offspring_of_female')
+    male_parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True,
+                                    related_name='offspring_of_male')
     wean_date = models.DateField(null=True, blank=True)
     euthanasia_date = models.DateField(null=True, blank=True)
 
-    # Administrative variables
+    # Administrative Variables
     protocol = models.CharField(max_length=100)
     use = models.CharField(max_length=1, choices=[('E', 'Experimental'), ('B', 'Breeder'), ('U', 'Undefined')])
     room = models.CharField(max_length=100)
@@ -44,40 +70,79 @@ class Animal(models.Model):
     experiment = models.ForeignKey(Experiment, on_delete=models.SET_NULL, null=True, blank=True)
     experimental_group = models.ForeignKey(ExperimentalGroup, on_delete=models.SET_NULL, null=True, blank=True)
 
+    # Tumor Variables
+    tumor = models.ForeignKey(Tumor, on_delete=models.SET_NULL, null=True, blank=True)
+    implanted_tumor = models.ForeignKey(ImplantedTumor, on_delete=models.SET_NULL, null=True, blank=True)
+
     # Variables that can be calculated from existing data
     @property
     def age(self):
         return date.today() - self.date_of_birth
 
+    @property
+    def weight(self):
+        return AnimalWeight.objects.filter(animal=self).order_by('date').last()
 
-class AnimalHistory(models.Model):
+
+class AnimalWeight(models.Model):
+    animal_weight_id = models.AutoField(primary_key=True)
     animal = models.ForeignKey(Animal, on_delete=models.CASCADE)
-    event_date = models.DateTimeField(auto_now_add=True)
-    event_type = models.CharField(max_length=100)
-    animal_snapshot = models.JSONField()
-
-    @classmethod
-    def create_from_Animal(cls, animal, event_type):
-        animal_snapshot = {
-            'animal_id': animal.animal_id,
-            'date_of_birth': str(animal.date_of_birth),
-            'sex': animal.sex,
-            'species': animal.species,
-            'strain': animal.strain,
-            'female_parent_id': animal.female_parent.animal_id if animal.female_parent else None,
-            'male_parent_id': animal.male_parent.animal_id if animal.male_parent else None,
-            'wean_date': str(animal.wean_date),
-            'euthanasia_date': str(animal.euthanasia_date),
-            'protocol': animal.protocol,
-            'use': animal.use,
-            'room': animal.room,
-            'cage': animal.cage,
-            'label': animal.label,
-            'notes': animal.notes,
-            'experiment_id': animal.experiment.experiment_id if animal.experiment else None,
-            'experimental_group_id': animal.experimental_group.group_id if animal.experimental_group else None,
-        }
-        return cls.objects.create(animal=animal, event_type=event_type, animal_snapshot=json.dumps(animal_snapshot))
+    date = models.DateField()
+    # Multiplies stored in the weight_units field normalize to g
+    weight_units = models.IntegerField(choices=[(3, 'Kg'), (0, 'g'), (-3, 'mg')])
+    weight = models.DecimalField(max_digits=7, decimal_places=3)
 
 
+class TreatmentPlan(models.Model):
+    treatment_id = models.AutoField(primary_key=True)
+    treatment = models.CharField(max_length=100)
+    experiment = models.ForeignKey(Experiment, on_delete=models.SET_NULL, null=True, blank=True)
+    experimental_group = models.ForeignKey(ExperimentalGroup, on_delete=models.SET_NULL, null=True, blank=True)
+    route = models.CharField(max_length=100)
+    # Multiplies stored in the expected_animal_weight_units field normalize to Kg
+    expected_animal_weight_units = models.IntegerField(choices=[(3, 'Kg'), (0, 'g'), (-3, 'mg')])
+    expected_animal_weight = models.DecimalField(max_digits=7, decimal_places=3)
+    # Multipliers stored in the volume_units field normalize to mL
+    volume_units = models.IntegerField(choices=[(0, 'mL'), (-3, 'μL')])
+    volume = models.DecimalField(max_digits=7, decimal_places=3)
+    # Multipliers stored in the dose_units field normalize to mg
+    dose_units = models.IntegerField(choices=[(0, 'mg'), (-3, 'μg'), (-6, 'ng'), (-9, 'pg')])
+    dose = models.DecimalField(max_digits=7, decimal_places=3)
 
+    # Variables that can be calculated from existing data
+    @property
+    def concentration(self):
+        # Returns the treatment plan concentration in mg/mL
+        return (self.dose * pow(10, self.dose_units)) / (self.volume * pow(10, self.volume_units))
+
+    @property
+    def expected_dose(self):
+        # Returns the expected treatment plan dose in mg/Kg
+        return (self.dose * pow(10, self.dose_units)) / (self.expected_animal_weight * pow(10, self.expected_animal_weight_units - 3))
+
+
+class TreatmentRecord(models.Model):
+    treatment_record_id = models.AutoField(primary_key=True)
+    animal = models.ForeignKey(Animal, on_delete=models.CASCADE)
+    treatment_plan = models.ForeignKey(TreatmentPlan, on_delete=models.SET_NULL, null=True, blank=True)
+    datetime = models.DateTimeField()
+    # Multipliers stored in the volume_units field normalize to mL
+    volume_units = models.IntegerField(choices=[(0, 'mL'), (-3, 'μL')])
+    volume = models.DecimalField(max_digits=7, decimal_places=3)
+
+    # Variables that can be calculated based on existing data
+    @property
+    def actual_dose(self):
+        # Returns the actual dose based on treatment plan concentration, actual volume, and last animal weight
+        return (self.treatment_plan.concentration * self.volume * pow(10, self.volume_units)) / self.animal.weight
+
+
+class TumorVolume(models.Model):
+    tumor_volume_id = models.AutoField(primary_key=True)
+    animal = models.ForeignKey(Animal, on_delete=models.CASCADE)
+    implanted_tumor = models.ForeignKey(ImplantedTumor, on_delete=models.CASCADE)
+    datetime = models.DateTimeField()
+    method = models.CharField(max_length=100)
+    # volumes should only be accepted in mm^3
+    volume = models.DecimalField(max_digits=6, decimal_places=2)
+    scan = models.FileField(null=True, blank=True)
