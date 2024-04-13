@@ -11,7 +11,7 @@ class Experiment(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     start_date = models.DateField()
-    end_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
 
 
 class ExperimentalGroup(models.Model):
@@ -25,21 +25,21 @@ class Tumor(models.Model):
     tumor_id = models.AutoField(primary_key=True)
     source_species = models.CharField(max_length=100)
     source_sex = models.CharField(max_length=1, choices=[('M', 'Male'), ('F', 'Female'), ('U', 'Unknown')])
-    source_age = models.IntegerField()
-    source_date = models.DateField()
+    source_age = models.IntegerField(null=True, blank=True)
+    source_date = models.DateField(null=True, blank=True)
     tumor_type = models.CharField(max_length=200)
-    tumor_subtype = models.CharField(max_length=200)
-    description = models.TextField()
+    tumor_subtype = models.CharField(max_length=200, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
 
 
 class ImplantedTumor(models.Model):
     implanted_tumor_id = models.AutoField(primary_key=True)
     tumor = models.ForeignKey(Tumor, on_delete=models.CASCADE)
-    passage = models.IntegerField()
+    passage = models.IntegerField(null=True, blank=True)
     implant_date = models.DateField()
     implant_location = models.CharField(max_length=200)
     implantation_method = models.CharField(max_length=200)
-    description = models.TextField()
+    description = models.TextField(null=True, blank=True)
 
 
 class Animal(models.Model):
@@ -61,10 +61,10 @@ class Animal(models.Model):
     # Administrative Variables
     protocol = models.CharField(max_length=100)
     use = models.CharField(max_length=1, choices=[('E', 'Experimental'), ('B', 'Breeder'), ('U', 'Undefined')])
-    room = models.CharField(max_length=100)
-    cage = models.CharField(max_length=100)
+    room = models.CharField(max_length=100, null=True, blank=True)
+    cage = models.CharField(max_length=100, null=True, blank=True)
     label = models.CharField(max_length=200, null=True, blank=True)
-    notes = models.TextField
+    notes = models.TextField(null=True, blank=True)
 
     # Experimental Variables
     experiment = models.ForeignKey(Experiment, on_delete=models.SET_NULL, null=True, blank=True)
@@ -91,6 +91,7 @@ class AnimalWeight(models.Model):
     # Multiplies stored in the weight_units field normalize to g
     weight_units = models.IntegerField(choices=[(3, 'Kg'), (0, 'g'), (-3, 'mg')])
     weight = models.DecimalField(max_digits=7, decimal_places=3)
+    notes = models.TextField(null=True, blank=True)
 
 
 class TreatmentPlan(models.Model):
@@ -129,6 +130,8 @@ class TreatmentRecord(models.Model):
     # Multipliers stored in the volume_units field normalize to mL
     volume_units = models.IntegerField(choices=[(0, 'mL'), (-3, 'μL')])
     volume = models.DecimalField(max_digits=7, decimal_places=3)
+    notes = models.TextField(null=True, blank=True)
+
 
     # Variables that can be calculated based on existing data
     @property
