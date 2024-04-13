@@ -1,8 +1,4 @@
-import decimal
-from decimal import Decimal
 from django.db import models
-from django.db.models import DecimalField
-from django.db.models import Choices
 from datetime import date
 
 
@@ -119,7 +115,8 @@ class TreatmentPlan(models.Model):
     @property
     def expected_dose(self):
         # Returns the expected treatment plan dose in mg/Kg
-        return (self.dose * pow(10, self.dose_units)) / (self.expected_animal_weight * pow(10, self.expected_animal_weight_units - 3))
+        return (self.dose * pow(10, self.dose_units)) / (
+                    self.expected_animal_weight * pow(10, self.expected_animal_weight_units - 3))
 
 
 class TreatmentRecord(models.Model):
@@ -131,7 +128,6 @@ class TreatmentRecord(models.Model):
     volume_units = models.IntegerField(choices=[(0, 'mL'), (-3, 'μL')])
     volume = models.DecimalField(max_digits=7, decimal_places=3)
     notes = models.TextField(null=True, blank=True)
-
 
     # Variables that can be calculated based on existing data
     @property
@@ -149,4 +145,3 @@ class TumorVolume(models.Model):
     # volumes should only be accepted in mm^3
     volume = models.DecimalField(max_digits=6, decimal_places=2)
     scan = models.FileField(null=True, blank=True)
-
