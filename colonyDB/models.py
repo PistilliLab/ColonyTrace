@@ -149,3 +149,4 @@ class TumorVolume(models.Model):
     # volumes should only be accepted in mm^3
     volume = models.DecimalField(max_digits=6, decimal_places=2)
     scan = models.FileField(null=True, blank=True)
+
