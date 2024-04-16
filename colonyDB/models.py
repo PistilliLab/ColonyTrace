@@ -1,5 +1,5 @@
 from django.db import models
-from datetime import date
+from decimal import Decimal
 
 
 class Experiment(models.Model):
@@ -71,13 +71,15 @@ class Animal(models.Model):
     implanted_tumor = models.ForeignKey(ImplantedTumor, on_delete=models.SET_NULL, null=True, blank=True)
 
     # Variables that can be calculated from existing data
-    @property
-    def age(self):
-        return date.today() - self.date_of_birth
+    def age(self, date):
+        return date - self.date_of_birth
 
-    @property
-    def weight(self):
-        return AnimalWeight.objects.filter(animal=self).order_by('date').last()
+    def weight(self, date):
+        animal_weight = AnimalWeight.objects.filter(animal=self, date__lte=date).order_by('date').last()
+        if animal_weight:
+            return animal_weight.weight
+        else:
+            return None  # Or whatever default value you prefer if no weight is found
 
 
 class AnimalWeight(models.Model):
@@ -113,7 +115,7 @@ class TreatmentPlan(models.Model):
         return (self.dose * pow(10, self.dose_units)) / (self.volume * pow(10, self.volume_units))
 
     @property
-    def expected_dose(self):
+    def target_dose(self):
         # Returns the expected treatment plan dose in mg/Kg
         return (self.dose * pow(10, self.dose_units)) / (
                     self.expected_animal_weight * pow(10, self.expected_animal_weight_units - 3))
@@ -133,7 +135,7 @@ class TreatmentRecord(models.Model):
     @property
     def actual_dose(self):
         # Returns the actual dose based on treatment plan concentration, actual volume, and last animal weight
-        return (self.treatment_plan.concentration * self.volume * pow(10, self.volume_units)) / self.animal.weight
+        return Decimal(self.treatment_plan.concentration * self.volume * pow(10, self.volume_units)) / self.animal.weight(self.datetime.date())
 
 
 class TumorVolume(models.Model):
