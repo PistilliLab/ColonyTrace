@@ -42,7 +42,7 @@ class Animal(models.Model):
     primary_key = models.AutoField(primary_key=True)
 
     # Biologic Variables
-    animal_id = models.IntegerField(unique=True)
+    animal_id = models.CharField(unique=True, max_length=100, null=True, blank=True)
     date_of_birth = models.DateField()
     sex = models.CharField(max_length=1, choices=[('M', 'Male'), ('F', 'Female'), ('U', 'Unknown')])
     species = models.CharField(max_length=100)
