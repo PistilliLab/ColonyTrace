@@ -9,6 +9,9 @@ class Experiment(models.Model):
     start_date = models.DateField()
     end_date = models.DateField(null=True, blank=True)
 
+    def __str__(self):
+        return self.title
+
 
 class ExperimentalGroup(models.Model):
     group_id = models.AutoField(primary_key=True)
@@ -16,9 +19,13 @@ class ExperimentalGroup(models.Model):
     group_name = models.CharField(max_length=100)
     description = models.TextField()
 
+    def __str__(self):
+        return f"{self.experiment}: {self.group_name}"
+
 
 class Tumor(models.Model):
     tumor_id = models.AutoField(primary_key=True)
+    tumor_name = models.CharField(max_length=100, null=True, blank=True)
     source_species = models.CharField(max_length=100)
     source_sex = models.CharField(max_length=1, choices=[('M', 'Male'), ('F', 'Female'), ('U', 'Unknown')])
     source_age = models.IntegerField(null=True, blank=True)
@@ -26,6 +33,9 @@ class Tumor(models.Model):
     tumor_type = models.CharField(max_length=200)
     tumor_subtype = models.CharField(max_length=200, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return self.tumor_name
 
 
 class ImplantedTumor(models.Model):
@@ -36,6 +46,9 @@ class ImplantedTumor(models.Model):
     implant_location = models.CharField(max_length=200)
     implantation_method = models.CharField(max_length=200)
     description = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.tumor}p{self.passage}, implanted on {self.implant_date}"
 
 
 class Animal(models.Model):
@@ -79,7 +92,13 @@ class Animal(models.Model):
         if animal_weight:
             return animal_weight.weight
         else:
-            return None  # Or whatever default value you prefer if no weight is found
+            return None
+
+    def __str__(self):
+        if self.animal_id is None:
+            return ''
+        else:
+            return self.animal_id
 
 
 class AnimalWeight(models.Model):
@@ -118,7 +137,10 @@ class TreatmentPlan(models.Model):
     def target_dose(self):
         # Returns the expected treatment plan dose in mg/Kg
         return (self.dose * pow(10, self.dose_units)) / (
-                    self.expected_animal_weight * pow(10, self.expected_animal_weight_units - 3))
+                    self.expected_animal_weight * round(Decimal(pow(10, self.expected_animal_weight_units - 3)), 0))
+
+    def __str__(self):
+        return f"{self.treatment}: {self.target_dose} mg/Kg, {self.route}"
 
 
 class TreatmentRecord(models.Model):
