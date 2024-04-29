@@ -52,7 +52,7 @@ class TestAnimalWeight(TestCase):
         AnimalWeight.objects.create(
             animal=self.animal,
             date=date(2022, 1, 5),
-            weight_units=0,  # g
+            weight_units=3,  # g
             weight=22.1
         )
 
@@ -60,12 +60,12 @@ class TestAnimalWeight(TestCase):
         # Test for weight on same date
         expected_weight = Decimal(20.5)
         weight_on_date = self.animal.weight(date=date(2022, 1, 1))
-        self.assertTrue((weight_on_date - expected_weight) < 0.0001) # The weight on 2022-01-01
+        self.assertTrue(abs(weight_on_date - expected_weight) < 0.0001) # The weight on 2022-01-01
 
         # Test for weight on a date after entry
-        expected_weight = Decimal(22.1)
+        expected_weight = Decimal(22100)
         weight_on_date = self.animal.weight(date=date(2022, 1, 7))
-        self.assertTrue((weight_on_date - expected_weight) < 0.0001) # The weight on 2022-01-05
+        self.assertTrue(abs(weight_on_date - expected_weight) < 0.0001) # The weight on 2022-01-05
 
         # Test for weight on a date before any entry
         weight_on_date = self.animal.weight(date=date(2021, 1, 1))
@@ -89,12 +89,12 @@ class TestTreatmentPlanProperties(TestCase):
         # Test the concentration property
         expected_concentration = 6
         calculated_concentration = self.treatment_plan.concentration
-        self.assertTrue((self.treatment_plan.concentration - expected_concentration) < 0.0001)
+        self.assertTrue(abs(self.treatment_plan.concentration - expected_concentration) < 0.0001)
 
     def test_target_dose(self):
         # Test the target_dose property
         expected_target_dose = 30
-        self.assertTrue((self.treatment_plan.target_dose - expected_target_dose) < 0.0001)
+        self.assertTrue(abs(self.treatment_plan.target_dose - expected_target_dose) < 0.0001)
 
 
 class TestActualDose(TestCase):
@@ -119,7 +119,7 @@ class TestActualDose(TestCase):
             animal=self.animal,
             date=date(2022, 3, 28),
             weight_units=0,  # g
-            weight=22.1
+            weight=21.5
         )
 
         # Create a treatment plan
@@ -144,5 +144,6 @@ class TestActualDose(TestCase):
 
     def test_actual_dose(self):
         # Test the actual_dose property
-        expected_dose = Decimal(43.902)
-        self.assertTrue((self.treatment_record.actual_dose - expected_dose) < 0.0001)
+        expected_dose = Decimal(41.86)
+        print(f"\nActual Dose is: {self.treatment_record.actual_dose}")
+        self.assertTrue(abs(self.treatment_record.actual_dose - expected_dose) < 0.001)

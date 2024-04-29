@@ -39,5 +39,4 @@ class Command(BaseCommand):
                 animal.wean_date = datetime.strptime(row['Wean Date'], '%m/%d/%Y').date() if row['Wean Date'] else None
                 animal.label = row['Labels']
                 animal.notes = row['Notes']
-                animal.cage = row['Cage ID']  # Assigning cage ID to cage field
                 animal.save()
